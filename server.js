@@ -1,15 +1,32 @@
 'use strict';
 
+// server.js
 const express = require('express');
-const path = require('path')
-const PORT = process.env.PORT || 8080
-const HOST = process.env.HOST
+const http = require('http');
+const socketIo = require('socket.io');
+const path = require('path');
 
-// App
 const app = express();
-app.get('/', (req, res) => {
-  res.send('Hello World - NodeJS is running on Qoddi!');
+const server = http.createServer(app);
+const io = socketIo(server);
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+let users = {}; // Store user connections
+
+io.on('connection', (socket) => {
+  console.log('A user connected');
+  
+  socket.on('sendMessage', (message) => {
+    io.emit('message', { ...message, from: socket.id });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
 });
 
-app.listen(PORT, HOST);
-console.log(`Running on http://${HOST}:${PORT}`);
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
